@@ -7,140 +7,588 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
-  /* ── paste the full CSS from the prototype here ── */
-  /* (copy everything inside <style>...</style> from burger-monk-rewards.html) */
+  :root {
+    --ink: #1a1208;
+    --cream: #f5f0e8;
+    --amber: #c8851a;
+    --amber-light: #f0c060;
+    --amber-dim: #7a4f0d;
+    --char: #2c2010;
+    --muted: #8a7a5a;
+    --success: #2d6a4f;
+    --success-bg: #d8f3dc;
+    --danger: #9b2226;
+    --danger-bg: #ffe0e0;
+    --card-bg: #fffdf7;
+    --border: rgba(200,133,26,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--ink); color: var(--cream); min-height: 100vh; overflow-x: hidden; }
+
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* TAP LANDING */
+  #screen-tap { align-items: center; justify-content: center; text-align: center; background: var(--ink); position: relative; overflow: hidden; padding: 2rem 1.5rem; }
+  .tap-bg-circle { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(200,133,26,0.18) 0%, transparent 70%); animation: pulse-ring 3s ease-in-out infinite; }
+  .tap-bg-circle:nth-child(1) { width: 600px; height: 600px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .tap-bg-circle:nth-child(2) { width: 400px; height: 400px; top: 50%; left: 50%; transform: translate(-50%,-50%); animation-delay: 0.8s; }
+  .tap-bg-circle:nth-child(3) { width: 250px; height: 250px; top: 50%; left: 50%; transform: translate(-50%,-50%); animation-delay: 1.6s; }
+  @keyframes pulse-ring { 0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)} }
+  .tap-logo { font-family: 'Playfair Display', serif; font-size: 13px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--amber); margin-bottom: 0.5rem; position: relative; }
+  .tap-monk-icon { width: 90px; height: 90px; margin: 0 auto 1.5rem; border: 2px solid var(--amber); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 42px; position: relative; background: rgba(200,133,26,0.08); }
+  .tap-headline { font-family: 'Playfair Display', serif; font-size: clamp(2rem,8vw,3rem); font-weight: 900; line-height: 1.1; color: var(--cream); position: relative; margin-bottom: 0.75rem; }
+  .tap-headline span { color: var(--amber-light); }
+  .tap-sub { font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 300px; margin: 0 auto 2.5rem; position: relative; }
+  .tap-coin-badge { display: inline-block; background: rgba(200,133,26,0.15); border: 1px solid rgba(200,133,26,0.35); border-radius: 100px; padding: 6px 16px; font-size: 13px; color: var(--amber-light); margin-bottom: 1.75rem; position: relative; letter-spacing: 0.02em; }
+  .tap-returning { margin-top: 1.5rem; font-size: 13px; color: var(--muted); position: relative; }
+  .tap-returning a { color: var(--amber); text-decoration: none; cursor: pointer; }
+
+  /* BUTTONS */
+  .btn-primary { display: inline-flex; align-items: center; gap: 10px; background: var(--amber); color: var(--ink); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; padding: 14px 28px; border-radius: 100px; border: none; cursor: pointer; position: relative; transition: background 0.2s, transform 0.15s; text-decoration: none; letter-spacing: 0.01em; }
+  .btn-primary:hover { background: var(--amber-light); transform: scale(1.02); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-full { width: 100%; background: var(--amber); color: var(--ink); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; padding: 15px; border-radius: 100px; border: none; cursor: pointer; margin-top: 1.5rem; transition: background 0.2s, transform 0.15s; }
+  .btn-full:hover { background: var(--amber-light); }
+  .btn-full:active { transform: scale(0.99); }
+  .btn-full:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost { background: transparent; border: 0.5px solid var(--border); color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 12px 28px; border-radius: 100px; cursor: pointer; transition: border-color 0.2s; }
+  .btn-ghost:hover { border-color: var(--amber); color: var(--amber); }
+  .google-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; color: #1a1208; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; padding: 13px; border-radius: 100px; border: none; cursor: pointer; transition: background 0.15s, transform 0.15s; }
+  .google-btn:hover { background: #f0f0f0; }
+  .google-btn svg { width: 20px; height: 20px; }
+  .back-btn { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; padding: 0; line-height: 1; }
+  .back-btn:hover { color: var(--cream); }
+
+  /* SIGNUP */
+  #screen-signup { background: var(--ink); padding: 0; justify-content: flex-start; }
+  .signup-header { background: linear-gradient(180deg,rgba(200,133,26,0.12) 0%,transparent 100%); padding: 2.5rem 1.5rem 1.5rem; text-align: center; border-bottom: 0.5px solid var(--border); }
+  .signup-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--cream); margin-bottom: 4px; }
+  .signup-sub { font-size: 13px; color: var(--muted); }
+  .signup-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
+  .form-section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); margin-bottom: 10px; margin-top: 1.5rem; }
+  .form-section-label:first-child { margin-top: 0; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .field input { width: 100%; background: rgba(255,255,255,0.05); border: 0.5px solid rgba(200,133,26,0.25); border-radius: 10px; padding: 12px 14px; font-size: 15px; color: var(--cream); font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s; }
+  .field input:focus { border-color: var(--amber); }
+  .field input::placeholder { color: rgba(138,122,90,0.5); }
+  .google-prefilled { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.04); border: 0.5px solid rgba(200,133,26,0.2); border-radius: 10px; padding: 11px 14px; margin-bottom: 12px; }
+  .google-prefilled .gicon { width: 18px; height: 18px; flex-shrink: 0; }
+  .google-prefilled .gval { font-size: 14px; color: var(--cream); flex: 1; }
+  .google-prefilled .gbadge { font-size: 10px; background: rgba(200,133,26,0.2); color: var(--amber); padding: 2px 7px; border-radius: 100px; }
+  .waiver-box { background: rgba(255,255,255,0.03); border: 0.5px solid var(--border); border-radius: 12px; padding: 14px; max-height: 140px; overflow-y: auto; font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 12px; }
+  .waiver-box::-webkit-scrollbar { width: 4px; }
+  .waiver-box::-webkit-scrollbar-thumb { background: rgba(200,133,26,0.3); border-radius: 4px; }
+  .checkbox-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; cursor: pointer; }
+  .checkbox-row input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--amber); flex-shrink: 0; margin-top: 1px; cursor: pointer; }
+  .checkbox-row span { font-size: 13px; color: var(--cream); line-height: 1.5; }
+
+  /* WALLET */
+  #screen-wallet { background: var(--ink); flex-direction: column; }
+  .wallet-topbar { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.25rem 0; }
+  .wallet-brand { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--amber); letter-spacing: 0.05em; }
+  .wallet-avatar { width: 34px; height: 34px; border-radius: 50%; background: rgba(200,133,26,0.2); border: 1px solid var(--amber); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: var(--amber); cursor: pointer; }
+  .balance-card { margin: 1.25rem; background: linear-gradient(135deg,#2c1a00 0%,#1a1208 60%,#2c1a00 100%); border: 1px solid rgba(200,133,26,0.35); border-radius: 20px; padding: 1.75rem 1.5rem; text-align: center; position: relative; overflow: hidden; }
+  .balance-card::before { content: ''; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(200,133,26,0.07); }
+  .balance-label { font-size: 12px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .balance-amount { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 900; color: var(--cream); line-height: 1; }
+  .balance-amount .cents { font-size: 28px; color: var(--amber-light); }
+  .balance-goal { margin-top: 1rem; background: rgba(255,255,255,0.05); border-radius: 100px; overflow: hidden; height: 6px; }
+  .balance-goal-fill { height: 100%; background: linear-gradient(90deg,var(--amber-dim),var(--amber-light)); border-radius: 100px; transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+  .balance-goal-label { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .redeem-btn { margin: 0 1.25rem; width: calc(100% - 2.5rem); background: var(--amber); color: var(--ink); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; padding: 15px; border-radius: 100px; border: none; cursor: pointer; transition: background 0.2s, transform 0.15s; }
+  .redeem-btn:not(:disabled):hover { background: var(--amber-light); }
+  .redeem-btn:not(:disabled):active { transform: scale(0.99); }
+  .redeem-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .tap-status { margin: 1rem 1.25rem 0; background: rgba(255,255,255,0.04); border: 0.5px solid var(--border); border-radius: 14px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 12px; }
+  .tap-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .tap-dot.ready { background: #52b788; box-shadow: 0 0 0 4px rgba(82,183,136,0.2); animation: glow-green 2s infinite; }
+  .tap-dot.waiting { background: var(--amber); box-shadow: 0 0 0 4px rgba(200,133,26,0.2); }
+  @keyframes glow-green { 0%,100%{box-shadow:0 0 0 4px rgba(82,183,136,0.2)} 50%{box-shadow:0 0 0 8px rgba(82,183,136,0.1)} }
+  .tap-status-text { font-size: 13px; color: var(--cream); flex: 1; }
+  .tap-status-text span { color: var(--muted); display: block; font-size: 11px; margin-top: 2px; }
+  .history-section { padding: 1.25rem 1.25rem 0; flex: 1; overflow-y: auto; }
+  .history-title { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid rgba(255,255,255,0.05); }
+  .history-item:last-child { border-bottom: none; }
+  .history-left { display: flex; align-items: center; gap: 12px; }
+  .history-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .history-icon.earn { background: rgba(82,183,136,0.12); }
+  .history-icon.redeem { background: rgba(200,133,26,0.12); }
+  .history-desc { font-size: 13px; color: var(--cream); }
+  .history-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .history-amount { font-size: 14px; font-weight: 500; }
+  .history-amount.earn { color: #52b788; }
+  .history-amount.redeem { color: var(--amber); }
+
+  /* REDEEM */
+  #screen-redeem { background: var(--ink); align-items: center; justify-content: center; text-align: center; padding: 2rem 1.5rem; }
+  .redeem-success-icon { width: 90px; height: 90px; border-radius: 50%; background: rgba(200,133,26,0.12); border: 2px solid var(--amber); display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 1.5rem; animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes pop-in { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+  .redeem-headline { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; color: var(--cream); margin-bottom: 8px; }
+  .redeem-sub { font-size: 14px; color: var(--muted); margin-bottom: 2rem; line-height: 1.6; }
+  .redeem-code-card { background: rgba(200,133,26,0.08); border: 1px dashed rgba(200,133,26,0.4); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; width: 100%; max-width: 320px; }
+  .redeem-code-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .redeem-code-val { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900; color: var(--amber-light); letter-spacing: 0.08em; }
+  .redeem-instruction { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 1.5rem; max-width: 280px; }
+  .redeem-discount-tag { display: inline-block; background: rgba(82,183,136,0.12); border: 0.5px solid rgba(82,183,136,0.35); color: #52b788; font-size: 13px; padding: 6px 16px; border-radius: 100px; margin-bottom: 2rem; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--char); border: 0.5px solid var(--border); border-radius: 100px; padding: 12px 20px; font-size: 13px; color: var(--cream); display: flex; align-items: center; gap: 8px; z-index: 999; white-space: nowrap; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.coin { border-color: rgba(200,133,26,0.4); }
+
+  /* LOADING */
+  #screen-loading { align-items: center; justify-content: center; background: var(--ink); }
+  .spinner { width: 40px; height: 40px; border: 2px solid rgba(200,133,26,0.2); border-top-color: var(--amber); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  ::-webkit-scrollbar { width: 0; }
 </style>
 </head>
 <body>
+
+<!-- SCREEN: LOADING -->
+<div id="screen-loading" class="screen active">
+  <div class="spinner"></div>
+</div>
+
+<!-- SCREEN: TAP LANDING -->
+<div id="screen-tap" class="screen">
+  <div class="tap-bg-circle"></div>
+  <div class="tap-bg-circle"></div>
+  <div class="tap-bg-circle"></div>
+  <div class="tap-logo">The Burger Monk</div>
+  <div class="tap-monk-icon">🍔</div>
+  <div class="tap-coin-badge">🪙 Earn $0.25 with every tap</div>
+  <h1 class="tap-headline">Tap. Earn.<br/><span>Feast for free.</span></h1>
+  <p class="tap-sub">Sign up with Google, tap our RFID token each visit, and earn $0.25 toward free food.</p>
+  <button class="btn-primary" onclick="startSignup()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M15 3h6v6M10 14L21 3M9 3H3v18h18v-6"/></svg>
+    Get started — it's free
+  </button>
+  <p class="tap-returning">Already a member? <a onclick="startSignup()">Sign in →</a></p>
+</div>
+
+<!-- SCREEN: SIGNUP / WAIVER -->
+<div id="screen-signup" class="screen">
+  <div class="signup-header">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
+      <button class="back-btn" onclick="showScreen('screen-tap')">←</button>
+      <div style="flex:1;text-align:center;">
+        <div class="signup-title">Join Tap Rewards</div>
+        <div class="signup-sub">Your first $0.25 is waiting</div>
+      </div>
+      <div style="width:28px;"></div>
+    </div>
+    <div id="google-step">
+      <button class="google-btn" onclick="signInGoogle()">
+        <svg viewBox="0 0 48 48" width="20" height="20"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.6 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.9 6.5 29.2 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.4 18.9 12 24 12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.9 6.5 29.2 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.1 0 9.7-1.9 13.2-5l-6.1-5.1C29.2 35.4 26.7 36 24 36c-5.1 0-9.5-3.3-11.3-8l-6.6 4.9C9.7 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.5-2.5 4.6-4.7 6l6.1 5.1C40.3 35.5 44 30.1 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+        Continue with Google
+      </button>
+    </div>
+  </div>
+  <div class="signup-body" id="signup-form" style="display:none;">
+    <div class="form-section-label">From Google</div>
+    <div class="google-prefilled">
+      <svg class="gicon" viewBox="0 0 48 48" width="18" height="18"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.6 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.9 6.5 29.2 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.4 18.9 12 24 12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.9 6.5 29.2 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.1 0 9.7-1.9 13.2-5l-6.1-5.1C29.2 35.4 26.7 36 24 36c-5.1 0-9.5-3.3-11.3-8l-6.6 4.9C9.7 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.5-2.5 4.6-4.7 6l6.1 5.1C40.3 35.5 44 30.1 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+      <span class="gval" id="google-email-display">—</span>
+      <span class="gbadge">Verified</span>
+    </div>
+    <div class="form-section-label">Your details</div>
+    <div class="field"><label>Full name</label><input type="text" id="inp-name" placeholder="Your name"/></div>
+    <div class="field"><label>Phone number</label><input type="tel" id="inp-phone" placeholder="+1 (647) 555-0100"/></div>
+    <div class="field"><label>Date of birth</label><input type="date" id="inp-dob"/></div>
+    <div class="form-section-label" style="margin-top:1.5rem;">Waiver & terms</div>
+    <div class="waiver-box">
+      <strong style="color:var(--cream);">The Burger Monk Tap Rewards — Participation Waiver</strong><br/><br/>
+      1. <strong style="color:var(--cream);">Eligibility:</strong> Participants must be 13 years of age or older.<br/><br/>
+      2. <strong style="color:var(--cream);">Earning credits:</strong> Each valid RFID tap earns $0.25. Taps are limited to one (1) per 3-hour window per account. Credits have no cash value and cannot be transferred.<br/><br/>
+      3. <strong style="color:var(--cream);">Redemption:</strong> Credits may be redeemed at $10.00 for a $10 discount applied at point of sale.<br/><br/>
+      4. <strong style="color:var(--cream);">Data use:</strong> Your name, email, phone, and date of birth are stored for program administration only. We will not sell your data.<br/><br/>
+      5. <strong style="color:var(--cream);">Program changes:</strong> The Burger Monk may modify or terminate this program at any time with email notice.<br/><br/>
+      6. <strong style="color:var(--cream);">Abuse:</strong> Any attempt to manipulate the tap system will result in account suspension and forfeiture of credits.
+    </div>
+    <label class="checkbox-row">
+      <input type="checkbox" id="waiver-check" onchange="checkReady()"/>
+      <span>I have read and agree to the participation waiver and terms above</span>
+    </label>
+    <label class="checkbox-row">
+      <input type="checkbox" id="age-check" onchange="checkReady()"/>
+      <span>I confirm I am 13 years of age or older</span>
+    </label>
+    <button class="btn-full" id="signup-submit" disabled onclick="completeSignup()">Create my account →</button>
+    <div id="signup-error" style="color:#f07070;font-size:13px;margin-top:12px;text-align:center;display:none;"></div>
+  </div>
+</div>
+
+<!-- SCREEN: WALLET -->
+<div id="screen-wallet" class="screen">
+  <div class="wallet-topbar">
+    <div class="wallet-brand">The Burger Monk</div>
+    <div class="wallet-avatar" id="wallet-avatar">?</div>
+  </div>
+  <div class="balance-card">
+    <div class="balance-label">Your tap balance</div>
+    <div class="balance-amount">$<span id="bal-dollars">0</span><span class="cents">.<span id="bal-cents">00</span></span></div>
+    <div class="balance-goal"><div class="balance-goal-fill" id="balance-bar" style="width:0%"></div></div>
+    <div class="balance-goal-label" id="balance-goal-label">$0.00 of $10.00 to redeem</div>
+  </div>
+  <button class="redeem-btn" id="redeem-btn" disabled onclick="goRedeem()">🎉 Redeem $10 — show us the code</button>
+  <div class="tap-status">
+    <div class="tap-dot ready" id="tap-dot"></div>
+    <div class="tap-status-text">
+      <div id="tap-status-main">Ready to earn</div>
+      <span id="tap-status-sub">Tap the RFID token at your table</span>
+    </div>
+  </div>
+  <div class="history-section">
+    <div class="history-title">Activity</div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- SCREEN: REDEEM -->
+<div id="screen-redeem" class="screen">
+  <div class="redeem-success-icon">🍔</div>
+  <h2 class="redeem-headline">Here's your $10 off</h2>
+  <p class="redeem-sub">Show this to your server.<br/>They'll apply it at the register.</p>
+  <div class="redeem-code-card">
+    <div class="redeem-code-label">Redemption code</div>
+    <div class="redeem-code-val" id="redeem-code-val">BM-0000</div>
+  </div>
+  <div class="redeem-discount-tag">✓ $10.00 discount — one use only</div>
+  <p class="redeem-instruction">Your balance will be deducted by $10 once you confirm below.</p>
+  <button class="btn-primary" onclick="confirmRedeem()" style="margin-bottom:12px;">✓ I've shown it — confirm redemption</button>
+  <br/>
+  <button class="btn-ghost" onclick="showScreen('screen-wallet')" style="margin-top:10px;">← Back to wallet</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
 <script>
-  const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';   // ← replace
-  const SUPABASE_KEY = 'YOUR_ANON_KEY';                       // ← replace
-  const COOLDOWN_MS  = 3 * 60 * 60 * 1000;
-  const TAP_EARN     = 25;
-  const REDEEM_AT    = 1000;
+// ── CONFIGURATION — replace these two values ──
+const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+const SUPABASE_KEY = 'YOUR_ANON_PUBLIC_KEY';
 
-  const { createClient } = supabase;
-  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+// ── CONSTANTS ──
+const COOLDOWN_MS     = 3 * 60 * 60 * 1000; // 3 hours
+const TAP_EARN_CENTS  = 25;
+const REDEEM_CENTS    = 1000; // $10
 
-  // ── AUTH ──
-  async function signInGoogle() {
-    await db.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.href }
-    });
-  }
+// ── INIT SUPABASE ──
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  async function getUser() {
-    const { data: { user } } = await db.auth.getUser();
-    return user;
-  }
+let currentUser  = null;
+let currentWallet = null;
+let pendingRedeemCode = null;
+let tickerInterval = null;
 
-  // ── PROFILE / WALLET SETUP ──
-  async function ensureWallet(userId) {
-    const { data } = await db.from('wallets').select().eq('id', userId).single();
-    if (!data) {
-      await db.from('wallets').insert({ id: userId, balance_cents: 0, last_tap_at: null });
-    }
-  }
+// ── SCREEN ROUTER ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
 
-  async function saveProfile(userId, formData) {
-    await db.from('profiles').upsert({
-      id: userId,
-      full_name: formData.name,
-      phone: formData.phone,
-      date_of_birth: formData.dob,
-      waiver_signed: true,
-      waiver_signed_at: new Date().toISOString()
-    });
-  }
+// ── TOAST ──
+let toastTimer;
+function showToast(msg, highlight) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (highlight ? ' coin' : '') + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
 
-  // ── TAP (server-side enforced cooldown) ──
-  async function processTap(userId) {
-    const { data: wallet } = await db
-      .from('wallets').select().eq('id', userId).single();
+// ── BOOT: check session on page load ──
+window.addEventListener('load', async () => {
+  showScreen('screen-loading');
 
-    const now = Date.now();
-    const lastTap = wallet.last_tap_at ? new Date(wallet.last_tap_at).getTime() : 0;
+  // Handle OAuth redirect
+  const { data: { session } } = await db.auth.getSession();
 
-    if (now - lastTap < COOLDOWN_MS) {
-      const remain = COOLDOWN_MS - (now - lastTap);
-      return { ok: false, remain };
-    }
-
-    // Award 25 cents
-    const newBalance = wallet.balance_cents + TAP_EARN;
-    await db.from('wallets').update({
-      balance_cents: newBalance,
-      last_tap_at: new Date().toISOString()
-    }).eq('id', userId);
-
-    await db.from('transactions').insert({
-      user_id: userId,
-      type: 'earn',
-      amount_cents: TAP_EARN,
-      label: 'RFID tap'
-    });
-
-    return { ok: true, newBalance };
-  }
-
-  // ── REDEEM ──
-  async function processRedeem(userId) {
-    const { data: wallet } = await db
-      .from('wallets').select().eq('id', userId).single();
-
-    if (wallet.balance_cents < REDEEM_AT) return { ok: false };
-
-    const newBalance = wallet.balance_cents - REDEEM_AT;
-    await db.from('wallets').update({ balance_cents: newBalance }).eq('id', userId);
-
-    const code = 'BM-' + Math.random().toString(36).toUpperCase().slice(2,6);
-    await db.from('transactions').insert({
-      user_id: userId,
-      type: 'redeem',
-      amount_cents: -REDEEM_AT,
-      label: `Redeemed — code ${code}`
-    });
-
-    return { ok: true, code, newBalance };
-  }
-
-  // ── LOAD WALLET DATA ──
-  async function loadWalletData(userId) {
-    const [{ data: wallet }, { data: txns }] = await Promise.all([
-      db.from('wallets').select().eq('id', userId).single(),
-      db.from('transactions').select().eq('user_id', userId)
-        .order('created_at', { ascending: false }).limit(20)
-    ]);
-    return { wallet, txns };
-  }
-
-  // ── ON PAGE LOAD ──
-  window.addEventListener('load', async () => {
-    const user = await getUser();
-
-    if (user) {
-      await ensureWallet(user.id);
-      const { data: profile } = await db.from('profiles')
-        .select().eq('id', user.id).single();
-
-      if (!profile || !profile.waiver_signed) {
-        // Show signup/waiver screen
-        showScreen('screen-signup');
-        prefillGoogleData(user);
-      } else {
-        // Show wallet
-        showScreen('screen-wallet');
-        await refreshWalletUI(user.id, profile);
-      }
+  if (session) {
+    currentUser = session.user;
+    await handleLoggedInUser();
+  } else {
+    // Check if arriving from RFID tap (?tap=1)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tap')) {
+      showScreen('screen-signup');
     } else {
       showScreen('screen-tap');
     }
+  }
+
+  // Listen for auth state changes (after Google redirect)
+  db.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      await handleLoggedInUser();
+    }
   });
+});
+
+async function handleLoggedInUser() {
+  // Check if profile + waiver complete
+  const { data: profile } = await db.from('profiles')
+    .select().eq('id', currentUser.id).single();
+
+  if (!profile || !profile.waiver_signed) {
+    // Show signup form pre-filled with Google data
+    showScreen('screen-signup');
+    document.getElementById('google-step').style.display = 'none';
+    document.getElementById('signup-form').style.display = 'block';
+    document.getElementById('google-email-display').textContent = currentUser.email;
+    const googleName = currentUser.user_metadata?.full_name || '';
+    document.getElementById('inp-name').value = googleName;
+  } else {
+    await loadAndShowWallet(profile);
+    // If they arrived via RFID tap, process it immediately
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tap')) {
+      window.history.replaceState({}, '', window.location.pathname);
+      await processTap();
+    }
+  }
+}
+
+// ── GOOGLE SIGN IN ──
+async function signInGoogle() {
+  const { error } = await db.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+  if (error) showToast('Sign in failed: ' + error.message, false);
+}
+
+function startSignup() {
+  showScreen('screen-signup');
+}
+
+// ── SIGNUP FORM ──
+function checkReady() {
+  const w = document.getElementById('waiver-check').checked;
+  const a = document.getElementById('age-check').checked;
+  document.getElementById('signup-submit').disabled = !(w && a);
+}
+
+async function completeSignup() {
+  const btn = document.getElementById('signup-submit');
+  const errEl = document.getElementById('signup-error');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  errEl.style.display = 'none';
+
+  const name  = document.getElementById('inp-name').value.trim();
+  const phone = document.getElementById('inp-phone').value.trim();
+  const dob   = document.getElementById('inp-dob').value;
+
+  if (!name || !phone || !dob) {
+    errEl.textContent = 'Please fill in your name, phone, and date of birth.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Create my account →';
+    return;
+  }
+
+  // Save profile
+  const { error: pe } = await db.from('profiles').upsert({
+    id: currentUser.id,
+    full_name: name,
+    phone: phone,
+    date_of_birth: dob,
+    waiver_signed: true,
+    waiver_signed_at: new Date().toISOString()
+  });
+
+  if (pe) { errEl.textContent = pe.message; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Create my account →'; return; }
+
+  // Create wallet if not exists
+  const { data: existingWallet } = await db.from('wallets').select().eq('id', currentUser.id).single();
+  if (!existingWallet) {
+    await db.from('wallets').insert({ id: currentUser.id, balance_cents: 0, last_tap_at: null });
+  }
+
+  // First tap bonus
+  await creditTap('Welcome tap — account created!');
+
+  const { data: profile } = await db.from('profiles').select().eq('id', currentUser.id).single();
+  await loadAndShowWallet(profile);
+  showToast('🎉 Welcome! You earned your first $0.25', true);
+}
+
+// ── LOAD WALLET ──
+async function loadAndShowWallet(profile) {
+  const initials = (profile.full_name || 'U')
+    .split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('wallet-avatar').textContent = initials;
+
+  const { data: wallet } = await db.from('wallets').select().eq('id', currentUser.id).single();
+  const { data: txns }   = await db.from('transactions').select()
+    .eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(20);
+
+  currentWallet = wallet;
+  renderWallet(wallet, txns || []);
+  showScreen('screen-wallet');
+  startTicker();
+}
+
+function renderWallet(wallet, txns) {
+  const bal = wallet.balance_cents || 0;
+  document.getElementById('bal-dollars').textContent = Math.floor(bal / 100);
+  document.getElementById('bal-cents').textContent   = String(bal % 100).padStart(2,'0');
+
+  const pct = Math.min((bal / REDEEM_CENTS) * 100, 100).toFixed(1);
+  document.getElementById('balance-bar').style.width = pct + '%';
+  document.getElementById('balance-goal-label').textContent =
+    bal >= REDEEM_CENTS
+      ? '✓ Ready to redeem!'
+      : `$${(bal/100).toFixed(2)} of $10.00 to redeem`;
+
+  document.getElementById('redeem-btn').disabled = bal < REDEEM_CENTS;
+  updateTapStatus(wallet.last_tap_at);
+  renderHistory(txns);
+}
+
+// ── TAP PROCESSING ──
+async function processTap() {
+  if (!currentUser) return;
+
+  const { data: wallet } = await db.from('wallets').select().eq('id', currentUser.id).single();
+  const now     = Date.now();
+  const lastTap = wallet.last_tap_at ? new Date(wallet.last_tap_at).getTime() : 0;
+
+  if (now - lastTap < COOLDOWN_MS) {
+    const remain = COOLDOWN_MS - (now - lastTap);
+    const h = Math.floor(remain / 3600000);
+    const m = Math.floor((remain % 3600000) / 60000);
+    showToast(`⏱ Tap available in ${h}h ${m}m`, false);
+    return;
+  }
+
+  await creditTap('RFID tap');
+  const { data: txns } = await db.from('transactions').select()
+    .eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(20);
+  const { data: newWallet } = await db.from('wallets').select().eq('id', currentUser.id).single();
+  currentWallet = newWallet;
+  renderWallet(newWallet, txns);
+  showToast('🪙 +$0.25 earned!', true);
+}
+
+async function creditTap(label) {
+  const { data: wallet } = await db.from('wallets').select().eq('id', currentUser.id).single();
+  const newBal = (wallet ? wallet.balance_cents : 0) + TAP_EARN_CENTS;
+
+  await db.from('wallets').upsert({
+    id: currentUser.id,
+    balance_cents: newBal,
+    last_tap_at: new Date().toISOString()
+  });
+
+  await db.from('transactions').insert({
+    user_id: currentUser.id,
+    type: 'earn',
+    amount_cents: TAP_EARN_CENTS,
+    label: label
+  });
+}
+
+// ── REDEEM ──
+async function goRedeem() {
+  const { data: wallet } = await db.from('wallets').select().eq('id', currentUser.id).single();
+  if (!wallet || wallet.balance_cents < REDEEM_CENTS) return;
+
+  pendingRedeemCode = 'BM-' + Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
+  document.getElementById('redeem-code-val').textContent = pendingRedeemCode;
+  showScreen('screen-redeem');
+}
+
+async function confirmRedeem() {
+  if (!currentUser || !pendingRedeemCode) return;
+
+  const { data: wallet } = await db.from('wallets').select().eq('id', currentUser.id).single();
+  const newBal = Math.max(wallet.balance_cents - REDEEM_CENTS, 0);
+
+  await db.from('wallets').update({ balance_cents: newBal }).eq('id', currentUser.id);
+  await db.from('transactions').insert({
+    user_id: currentUser.id,
+    type: 'redeem',
+    amount_cents: -REDEEM_CENTS,
+    label: 'Redeemed — code ' + pendingRedeemCode
+  });
+
+  const { data: txns } = await db.from('transactions').select()
+    .eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(20);
+  const { data: newWallet } = await db.from('wallets').select().eq('id', currentUser.id).single();
+  currentWallet = newWallet;
+  renderWallet(newWallet, txns);
+  pendingRedeemCode = null;
+  showScreen('screen-wallet');
+  showToast('✓ $10 deducted. Enjoy your meal!', false);
+}
+
+// ── TAP STATUS TICKER ──
+function updateTapStatus(lastTapAt) {
+  const now     = Date.now();
+  const lastTap = lastTapAt ? new Date(lastTapAt).getTime() : 0;
+  const dot     = document.getElementById('tap-dot');
+  const main    = document.getElementById('tap-status-main');
+  const sub     = document.getElementById('tap-status-sub');
+
+  if (!lastTapAt || now - lastTap >= COOLDOWN_MS) {
+    dot.className = 'tap-dot ready';
+    main.textContent = 'Ready to earn';
+    sub.textContent  = 'Tap the RFID token at your table';
+  } else {
+    const remain = COOLDOWN_MS - (now - lastTap);
+    const h = Math.floor(remain / 3600000);
+    const m = Math.floor((remain % 3600000) / 60000);
+    const s = Math.floor((remain % 60000) / 1000);
+    dot.className = 'tap-dot waiting';
+    main.textContent = 'Cooldown active';
+    sub.textContent  = `Next tap in ${h}h ${m < 10 ? '0'+m : m}m ${s < 10 ? '0'+s : s}s`;
+  }
+}
+
+function startTicker() {
+  clearInterval(tickerInterval);
+  tickerInterval = setInterval(() => {
+    if (document.getElementById('screen-wallet').classList.contains('active') && currentWallet) {
+      updateTapStatus(currentWallet.last_tap_at);
+    }
+  }, 1000);
+}
+
+// ── HISTORY ──
+function renderHistory(txns) {
+  const list = document.getElementById('history-list');
+  if (!txns || txns.length === 0) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:1rem 0;">No activity yet — tap to earn your first $0.25!</div>';
+    return;
+  }
+  list.innerHTML = txns.map(h => {
+    const isEarn  = h.type === 'earn';
+    const icon    = isEarn ? '🪙' : '🎉';
+    const amtStr  = isEarn ? '+$0.25' : '-$10.00';
+    const d       = new Date(h.created_at);
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return `<div class="history-item">
+      <div class="history-left">
+        <div class="history-icon ${h.type}">${icon}</div>
+        <div>
+          <div class="history-desc">${h.label}</div>
+          <div class="history-time">${dateStr} · ${timeStr}</div>
+        </div>
+      </div>
+      <div class="history-amount ${h.type}">${amtStr}</div>
+    </div>`;
+  }).join('');
+}
 </script>
-
-<!-- ── paste your full HTML screens here ── -->
-<!-- (copy all the screen divs from burger-monk-rewards.html) -->
-
 </body>
 </html>
