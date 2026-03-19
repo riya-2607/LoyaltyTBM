@@ -369,10 +369,10 @@ async function handleLoggedInUser() {
 
 // ── GOOGLE SIGN IN ──
 async function signInGoogle() {
-  const redirectTo = window.location.origin + window.location.pathname;
+  const redirectTo = 'https://riya-2607.github.io/LoyaltyTBM/';
   const { error } = await db.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo }
+    options: { redirectTo, queryParams: { prompt: 'select_account' }
   });
   if (error) showToast('Sign in failed: ' + error.message, false);
 }
@@ -620,25 +620,31 @@ function dbg(msg, err) {
 }
 
 window.addEventListener('load', async () => {
-  dbg('Page loaded');
-  if (typeof SUPABASE_URL === 'undefined' || SUPABASE_URL.includes('YOUR_PROJECT')) {
-    dbg('SUPABASE_URL is still a placeholder!', true); return;
-  }
-  if (typeof SUPABASE_KEY === 'undefined' || SUPABASE_KEY.includes('YOUR_ANON')) {
-    dbg('SUPABASE_KEY is still a placeholder!', true); return;
-  }
-  dbg('Supabase URL: ' + SUPABASE_URL);
-  dbg('Checking for existing session...');
-  try {
-    const { data: { session }, error } = await db.auth.getSession();
-    if (error) { dbg('getSession ERROR: ' + error.message, true); return; }
-    dbg('Session: ' + (session ? session.user.email : 'none'));
-    if (!session) dbg('No session — URL: ' + window.location.href);
-  } catch(e) {
-    dbg('Exception: ' + e.message, true);
-  }
-  db.auth.onAuthStateChange((event, session) => {
-    dbg('Auth event: ' + event + (session ? ' (' + session.user.email + ')' : ''));
+  showScreen('screen-loading');
+
+  let sessionHandled = false;
+
+  db.auth.onAuthStateChange(async (event, session) => {
+    if (sessionHandled) return;
+
+    if (event === 'SIGNED_IN' && session) {
+      sessionHandled = true;
+      currentUser = session.user;
+      window.history.replaceState({}, document.title, window.location.pathname);
+      await handleLoggedInUser();
+      return;
+    }
+
+    if (event === 'INITIAL_SESSION') {
+      sessionHandled = true;
+      if (session) {
+        currentUser = session.user;
+        await handleLoggedInUser();
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        showScreen(params.get('tap') ? 'screen-signup' : 'screen-tap');
+      }
+    }
   });
 });
 
