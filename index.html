@@ -270,8 +270,8 @@
 
 <script>
 // ── CONFIGURATION — replace these two values ──
-const SUPABASE_URL = 'https://huosclgeidwpivwulbnt.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1b3NjbGdlaWR3cGl2d3VsYm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzkwNzIsImV4cCI6MjA4OTQ1NTA3Mn0.aNAuFUmopDXGD5pbR3dVpEn0HG966T3esg8zuqynKMk';
+const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+const SUPABASE_KEY = 'YOUR_ANON_PUBLIC_KEY';
 
 // ── CONSTANTS ──
 const COOLDOWN_MS     = 3 * 60 * 60 * 1000; // 3 hours
@@ -313,8 +313,16 @@ function showToast(msg, highlight) {
 window.addEventListener('load', async () => {
   showScreen('screen-loading');
 
-  // Handle OAuth redirect
-  const { data: { session }, error} = await db.auth.getSession();
+  // onAuthStateChange fires first when returning from Google OAuth (PKCE)
+  db.auth.onAuthStateChange(async (event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !currentUser) {
+      currentUser = session.user;
+      await handleLoggedInUser();
+    }
+  });
+
+  // Also check for an existing session (returning visitor, already logged in)
+  const { data: { session }, error } = await db.auth.getSession();
 
   if (error) {
     console.error('Session error:', error.message);
@@ -322,11 +330,10 @@ window.addEventListener('load', async () => {
     return;
   }
 
-  if (session) {
+  if (session && !currentUser) {
     currentUser = session.user;
     await handleLoggedInUser();
-  } else {
-    // Check if arriving from RFID tap (?tap=1)
+  } else if (!session) {
     const params = new URLSearchParams(window.location.search);
     if (params.get('tap')) {
       showScreen('screen-signup');
@@ -334,14 +341,6 @@ window.addEventListener('load', async () => {
       showScreen('screen-tap');
     }
   }
-
-  // Listen for auth state changes (after Google redirect)
-  db.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session) {
-      currentUser = session.user;
-      await handleLoggedInUser();
-    }
-  });
 });
 
 async function handleLoggedInUser() {
@@ -370,9 +369,10 @@ async function handleLoggedInUser() {
 
 // ── GOOGLE SIGN IN ──
 async function signInGoogle() {
+  const redirectTo = window.location.origin + window.location.pathname;
   const { error } = await db.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: https://riya-2607.github.io/LoyaltyTBM/ }
+    options: { redirectTo }
   });
   if (error) showToast('Sign in failed: ' + error.message, false);
 }
@@ -602,5 +602,53 @@ function renderHistory(txns) {
   }).join('');
 }
 </script>
+
+<!-- DEBUG PANEL — delete this entire block once login is working -->
+<div id="debug-panel" style="position:fixed;bottom:0;left:0;right:0;background:#1a0a00;border-top:1px solid #c8851a;padding:10px 14px;font-family:monospace;font-size:11px;color:#f0c060;z-index:9999;max-height:160px;overflow-y:auto;">
+  <div style="color:#8a7a5a;margin-bottom:6px;">&#x1F527; DEBUG — remove once login works</div>
+  <div id="debug-log"></div>
+</div>
+<script>
+function dbg(msg, err) {
+  const el = document.getElementById('debug-log');
+  if (!el) return;
+  const d = document.createElement('div');
+  d.style.color = err ? '#f07070' : '#a0d0a0';
+  d.textContent = new Date().toLocaleTimeString() + ' | ' + msg;
+  el.prepend(d);
+  console.log('[BM]', msg);
+}
+
+window.addEventListener('load', async () => {
+  dbg('Page loaded');
+  if (typeof SUPABASE_URL === 'undefined' || SUPABASE_URL.includes('YOUR_PROJECT')) {
+    dbg('SUPABASE_URL is still a placeholder!', true); return;
+  }
+  if (typeof SUPABASE_KEY === 'undefined' || SUPABASE_KEY.includes('YOUR_ANON')) {
+    dbg('SUPABASE_KEY is still a placeholder!', true); return;
+  }
+  dbg('Supabase URL: ' + SUPABASE_URL);
+  dbg('Checking for existing session...');
+  try {
+    const { data: { session }, error } = await db.auth.getSession();
+    if (error) { dbg('getSession ERROR: ' + error.message, true); return; }
+    dbg('Session: ' + (session ? session.user.email : 'none'));
+    if (!session) dbg('No session — URL: ' + window.location.href);
+  } catch(e) {
+    dbg('Exception: ' + e.message, true);
+  }
+  db.auth.onAuthStateChange((event, session) => {
+    dbg('Auth event: ' + event + (session ? ' (' + session.user.email + ')' : ''));
+  });
+});
+
+const _origSignIn = window.signInGoogle;
+window.signInGoogle = async function() {
+  dbg('signInGoogle triggered');
+  dbg('Redirect to: ' + window.location.origin + window.location.pathname);
+  try { await _origSignIn(); } catch(e) { dbg('signInGoogle error: ' + e.message, true); }
+};
+</script>
+
 </body>
 </html>
