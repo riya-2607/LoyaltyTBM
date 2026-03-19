@@ -1,162 +1,146 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.7">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>The Burger Monk — Tap Rewards</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  /* ── paste the full CSS from the prototype here ── */
+  /* (copy everything inside <style>...</style> from burger-monk-rewards.html) */
+</style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1">&lt;meta charset="UTF-8"/&gt;</p>
-<p class="p1">&lt;meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/&gt;</p>
-<p class="p1">&lt;title&gt;The Burger Monk — Tap Rewards&lt;/title&gt;</p>
-<p class="p1">&lt;script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"&gt;&lt;/script&gt;</p>
-<p class="p1">&lt;link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&amp;family=DM+Sans:wght@300;400;500&amp;display=swap" rel="stylesheet"/&gt;</p>
-<p class="p1">&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>/* ── paste the full CSS from the prototype here ── */</p>
-<p class="p1"><span class="Apple-converted-space">  </span>/* (copy everything inside &lt;style&gt;...&lt;/style&gt; from burger-monk-rewards.html) */</p>
-<p class="p1">&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1">&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const SUPABASE_URL = 'https://huosclgeidwpivwulbnt.supabase.co'; <span class="Apple-converted-space">  </span>// ← replace</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1b3NjbGdlaWR3cGl2d3VsYm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzkwNzIsImV4cCI6MjA4OTQ1NTA3Mn0.aNAuFUmopDXGD5pbR3dVpEn0HG966T3esg8zuqynKMk'; <span class="Apple-converted-space">                      </span>// ← replace</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const COOLDOWN_MS<span class="Apple-converted-space">  </span>= 3 * 60 * 60 * 1000;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const TAP_EARN <span class="Apple-converted-space">    </span>= 25;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const REDEEM_AT<span class="Apple-converted-space">    </span>= 1000;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const { createClient } = supabase;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const db = createClient(SUPABASE_URL, SUPABASE_KEY);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// ── AUTH ──</p>
-<p class="p1"><span class="Apple-converted-space">  </span>async function signInGoogle() {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>await db.auth.signInWithOAuth({</p>
-<p class="p1"><span class="Apple-converted-space">      </span>provider: 'google',</p>
-<p class="p1"><span class="Apple-converted-space">      </span>options: { redirectTo: window.location.href }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>async function getUser() {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const { data: { user } } = await db.auth.getUser();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return user;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// ── PROFILE / WALLET SETUP ──</p>
-<p class="p1"><span class="Apple-converted-space">  </span>async function ensureWallet(userId) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const { data } = await db.from('wallets').select().eq('id', userId).single();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if (!data) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>await db.from('wallets').insert({ id: userId, balance_cents: 0, last_tap_at: null });</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>async function saveProfile(userId, formData) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>await db.from('profiles').upsert({</p>
-<p class="p1"><span class="Apple-converted-space">      </span>id: userId,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>full_name: formData.name,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>phone: formData.phone,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>date_of_birth: formData.dob,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>waiver_signed: true,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>waiver_signed_at: new Date().toISOString()</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// ── TAP (server-side enforced cooldown) ──</p>
-<p class="p1"><span class="Apple-converted-space">  </span>async function processTap(userId) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const { data: wallet } = await db</p>
-<p class="p1"><span class="Apple-converted-space">      </span>.from('wallets').select().eq('id', userId).single();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const now = Date.now();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const lastTap = wallet.last_tap_at ? new Date(wallet.last_tap_at).getTime() : 0;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>if (now - lastTap &lt; COOLDOWN_MS) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const remain = COOLDOWN_MS - (now - lastTap);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>return { ok: false, remain };</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>// Award 25 cents</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const newBalance = wallet.balance_cents + TAP_EARN;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>await db.from('wallets').update({</p>
-<p class="p1"><span class="Apple-converted-space">      </span>balance_cents: newBalance,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>last_tap_at: new Date().toISOString()</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}).eq('id', userId);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>await db.from('transactions').insert({</p>
-<p class="p1"><span class="Apple-converted-space">      </span>user_id: userId,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>type: 'earn',</p>
-<p class="p1"><span class="Apple-converted-space">      </span>amount_cents: TAP_EARN,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>label: 'RFID tap'</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>return { ok: true, newBalance };</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// ── REDEEM ──</p>
-<p class="p1"><span class="Apple-converted-space">  </span>async function processRedeem(userId) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const { data: wallet } = await db</p>
-<p class="p1"><span class="Apple-converted-space">      </span>.from('wallets').select().eq('id', userId).single();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>if (wallet.balance_cents &lt; REDEEM_AT) return { ok: false };</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const newBalance = wallet.balance_cents - REDEEM_AT;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>await db.from('wallets').update({ balance_cents: newBalance }).eq('id', userId);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const code = 'BM-' + Math.random().toString(36).toUpperCase().slice(2,6);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>await db.from('transactions').insert({</p>
-<p class="p1"><span class="Apple-converted-space">      </span>user_id: userId,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>type: 'redeem',</p>
-<p class="p1"><span class="Apple-converted-space">      </span>amount_cents: -REDEEM_AT,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>label: `Redeemed — code ${code}`</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>return { ok: true, code, newBalance };</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// ── LOAD WALLET DATA ──</p>
-<p class="p1"><span class="Apple-converted-space">  </span>async function loadWalletData(userId) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const [{ data: wallet }, { data: txns }] = await Promise.all([</p>
-<p class="p1"><span class="Apple-converted-space">      </span>db.from('wallets').select().eq('id', userId).single(),</p>
-<p class="p1"><span class="Apple-converted-space">      </span>db.from('transactions').select().eq('user_id', userId)</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.order('created_at', { ascending: false }).limit(20)</p>
-<p class="p1"><span class="Apple-converted-space">    </span>]);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return { wallet, txns };</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// ── ON PAGE LOAD ──</p>
-<p class="p1"><span class="Apple-converted-space">  </span>window.addEventListener('load', async () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const user = await getUser();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>if (user) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>await ensureWallet(user.id);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const { data: profile } = await db.from('profiles')</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.select().eq('id', user.id).single();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!profile || !profile.waiver_signed) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>// Show signup/waiver screen</p>
-<p class="p1"><span class="Apple-converted-space">        </span>showScreen('screen-signup');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>prefillGoogleData(user);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>// Show wallet</p>
-<p class="p1"><span class="Apple-converted-space">        </span>showScreen('screen-wallet');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>await refreshWalletUI(user.id, profile);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>showScreen('screen-tap');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>});</p>
-<p class="p1">&lt;/script&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;!-- ── paste your full HTML screens here ── --&gt;</p>
-<p class="p1">&lt;!-- (copy all the screen divs from burger-monk-rewards.html) --&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+<script>
+  const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';   // ← replace
+  const SUPABASE_KEY = 'YOUR_ANON_KEY';                       // ← replace
+  const COOLDOWN_MS  = 3 * 60 * 60 * 1000;
+  const TAP_EARN     = 25;
+  const REDEEM_AT    = 1000;
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── AUTH ──
+  async function signInGoogle() {
+    await db.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href }
+    });
+  }
+
+  async function getUser() {
+    const { data: { user } } = await db.auth.getUser();
+    return user;
+  }
+
+  // ── PROFILE / WALLET SETUP ──
+  async function ensureWallet(userId) {
+    const { data } = await db.from('wallets').select().eq('id', userId).single();
+    if (!data) {
+      await db.from('wallets').insert({ id: userId, balance_cents: 0, last_tap_at: null });
+    }
+  }
+
+  async function saveProfile(userId, formData) {
+    await db.from('profiles').upsert({
+      id: userId,
+      full_name: formData.name,
+      phone: formData.phone,
+      date_of_birth: formData.dob,
+      waiver_signed: true,
+      waiver_signed_at: new Date().toISOString()
+    });
+  }
+
+  // ── TAP (server-side enforced cooldown) ──
+  async function processTap(userId) {
+    const { data: wallet } = await db
+      .from('wallets').select().eq('id', userId).single();
+
+    const now = Date.now();
+    const lastTap = wallet.last_tap_at ? new Date(wallet.last_tap_at).getTime() : 0;
+
+    if (now - lastTap < COOLDOWN_MS) {
+      const remain = COOLDOWN_MS - (now - lastTap);
+      return { ok: false, remain };
+    }
+
+    // Award 25 cents
+    const newBalance = wallet.balance_cents + TAP_EARN;
+    await db.from('wallets').update({
+      balance_cents: newBalance,
+      last_tap_at: new Date().toISOString()
+    }).eq('id', userId);
+
+    await db.from('transactions').insert({
+      user_id: userId,
+      type: 'earn',
+      amount_cents: TAP_EARN,
+      label: 'RFID tap'
+    });
+
+    return { ok: true, newBalance };
+  }
+
+  // ── REDEEM ──
+  async function processRedeem(userId) {
+    const { data: wallet } = await db
+      .from('wallets').select().eq('id', userId).single();
+
+    if (wallet.balance_cents < REDEEM_AT) return { ok: false };
+
+    const newBalance = wallet.balance_cents - REDEEM_AT;
+    await db.from('wallets').update({ balance_cents: newBalance }).eq('id', userId);
+
+    const code = 'BM-' + Math.random().toString(36).toUpperCase().slice(2,6);
+    await db.from('transactions').insert({
+      user_id: userId,
+      type: 'redeem',
+      amount_cents: -REDEEM_AT,
+      label: `Redeemed — code ${code}`
+    });
+
+    return { ok: true, code, newBalance };
+  }
+
+  // ── LOAD WALLET DATA ──
+  async function loadWalletData(userId) {
+    const [{ data: wallet }, { data: txns }] = await Promise.all([
+      db.from('wallets').select().eq('id', userId).single(),
+      db.from('transactions').select().eq('user_id', userId)
+        .order('created_at', { ascending: false }).limit(20)
+    ]);
+    return { wallet, txns };
+  }
+
+  // ── ON PAGE LOAD ──
+  window.addEventListener('load', async () => {
+    const user = await getUser();
+
+    if (user) {
+      await ensureWallet(user.id);
+      const { data: profile } = await db.from('profiles')
+        .select().eq('id', user.id).single();
+
+      if (!profile || !profile.waiver_signed) {
+        // Show signup/waiver screen
+        showScreen('screen-signup');
+        prefillGoogleData(user);
+      } else {
+        // Show wallet
+        showScreen('screen-wallet');
+        await refreshWalletUI(user.id, profile);
+      }
+    } else {
+      showScreen('screen-tap');
+    }
+  });
+</script>
+
+<!-- ── paste your full HTML screens here ── -->
+<!-- (copy all the screen divs from burger-monk-rewards.html) -->
+
 </body>
 </html>
