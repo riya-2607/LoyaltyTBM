@@ -280,7 +280,13 @@ const REDEEM_CENTS    = 1000; // $10
 
 // ── INIT SUPABASE ──
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    flowType: 'pkce',
+    detectSessionInUrl: true,
+    persistSession: true,
+  }
+});
 
 let currentUser  = null;
 let currentWallet = null;
@@ -308,7 +314,13 @@ window.addEventListener('load', async () => {
   showScreen('screen-loading');
 
   // Handle OAuth redirect
-  const { data: { session } } = await db.auth.getSession();
+  const { data: { session }, error} = await db.auth.getSession();
+
+  if (error) {
+    console.error('Session error:', error.message);
+    showScreen('screen-tap');
+    return;
+  }
 
   if (session) {
     currentUser = session.user;
@@ -360,7 +372,7 @@ async function handleLoggedInUser() {
 async function signInGoogle() {
   const { error } = await db.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.href }
+    options: { redirectTo: https://riya-2607.github.io/LoyaltyTBM/ }
   });
   if (error) showToast('Sign in failed: ' + error.message, false);
 }
